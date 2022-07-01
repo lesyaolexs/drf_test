@@ -12,7 +12,7 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
-        language_version: python3.9
+        language_version: python3.8
   - repo: local
     hooks:
       - id: flake8
@@ -21,10 +21,3 @@ repos:
         language: python
         types: [python]
         require_serial: true
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        entry: mypy
-        language: python
-        types: [python]
