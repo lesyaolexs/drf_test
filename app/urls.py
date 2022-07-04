@@ -1,6 +1,7 @@
-from django.urls import path
-from app import views
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = [
-    path('', views.health_check, name='health check')
-]
+from app.views import CustomUserViewSet
+
+router = DefaultRouter()
+router.register(r"users", CustomUserViewSet, basename="user")
+urlpatterns = router.urls
