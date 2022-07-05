@@ -12,10 +12,12 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
+        exclude: ^(app/tests/.*)$
         language_version: python3.8
   - repo: local
     hooks:
       - id: flake8
+        exclude: ^(app/tests/.*)$
         args:
           - "--config=setup.cfg"
           - "--ignore=E402"
