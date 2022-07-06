@@ -81,7 +81,15 @@ DATABASES = {
         "PASSWORD": os.environ["DB_PASS"],
         "HOST": os.environ["DB_HOST"],
         "PORT": os.environ["DB_PORT"],
-    }
+    },
+    "TEST": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.environ["TEST_DB_NAME"],
+        "USER": os.environ["TEST_DB_USERNAME"],
+        "PASSWORD": os.environ["TEST_DB_PASS"],
+        "HOST": os.environ["TEST_DB_HOST"],
+        "PORT": os.environ["TEST_DB_PORT"],
+    },
 }
 
 # Password validation
@@ -135,4 +143,10 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 100,
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "TEST_REQUEST_RENDERER_CLASSES": [
+        "rest_framework.renderers.MultiPartRenderer",
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.TemplateHTMLRenderer",
+    ],
 }
