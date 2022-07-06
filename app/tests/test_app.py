@@ -38,7 +38,7 @@ class CustomUserTest(APITestCase):
 
     def test_user_retrieve(self):
         """
-        Ensure that getting user be id.
+        Ensure that getting user by id.
         """
         url = reverse("users-detail", kwargs={'pk': self.user1.pk})
         response = self.client.get(url)
@@ -51,8 +51,28 @@ class CustomUserTest(APITestCase):
 
     def test_invalid_user_retrieve(self):
         """
-        Ensure that no getting invalid user be id.
+        Ensure that no getting invalid user by id.
         """
         url = reverse("users-detail", kwargs={'pk': uuid.uuid4()})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_create_user(self):
+        """
+        Ensure that creating user.
+        """
+
+        url = reverse("users-list")
+        data = {
+            "login": "user4",
+            "sex": "female",
+            "birth_date": "2022-08-06"
+        }
+        records_number = CustomUser.objects.count()
+        response = self.client.post(url, data=data, format="json")
+        created_user = CustomUser.objects.get(pk=response.data["id"])
+        serializer = CustomUserSerializer(created_user)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(CustomUser.objects.count(), records_number+1)
+        self.assertEqual(response.data, serializer.data)
