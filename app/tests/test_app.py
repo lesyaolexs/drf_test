@@ -116,3 +116,21 @@ class CustomUserTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
+
+    def test_delete_user(self):
+        """
+        Ensure that user deleting by id.
+        """
+
+        url = reverse("users-detail", kwargs={'pk': self.user1.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_invalid_delete_user(self):
+        """
+        Ensure that user correct deleting by id.
+        """
+
+        url = reverse("users-detail", kwargs={'pk': uuid.uuid4()})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
