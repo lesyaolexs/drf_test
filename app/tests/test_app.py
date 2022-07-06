@@ -69,6 +69,7 @@ class CustomUserTest(APITestCase):
             "birth_date": "2022-08-06"
         }
         records_number = CustomUser.objects.count()
+
         response = self.client.post(url, data=data, format="json")
         created_user = CustomUser.objects.get(pk=response.data["id"])
         serializer = CustomUserSerializer(created_user)
@@ -98,3 +99,20 @@ class CustomUserTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, valid_response)
+
+    def test_partial_update_user(self):
+        """
+        Ensure that user partial updating by id.
+        """
+        url = reverse("users-detail", kwargs={'pk': self.user1.pk})
+        data = {
+            "login": "userUpdated",
+            "sex": "male",
+        }
+
+        response = self.client.patch(url, data=data, format="json")
+        updated_user = CustomUser.objects.get(pk=response.data["id"])
+        serializer = CustomUserSerializer(updated_user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
