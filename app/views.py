@@ -42,6 +42,5 @@ class CustomUserViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         queryset = CustomUser.objects.all()
         user = get_object_or_404(queryset, pk=pk)
-        response_serializer = CustomUserSerializer(user)
         user.delete()
-        return Response(response_serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)

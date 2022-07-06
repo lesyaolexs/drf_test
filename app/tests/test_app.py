@@ -1,70 +1,136 @@
-import django
+import uuid
 
-django.setup()
-
-from typing import Any, Dict
-
-from pytest_assert_utils import assert_model_attrs
-from pytest_common_subject import precondition_fixture
-from pytest_drf import (Returns200, Returns201, UsesGetMethod,
-                        UsesListEndpoint, UsesPostMethod, ViewSetTest)
-from pytest_drf.util import url_for
-from pytest_lambda import lambda_fixture, static_fixture
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from app.models import CustomUser
+from app.serializers import CustomUserSerializer
 
 
-def express_key_value(user: CustomUser) -> Dict[str, Any]:
-    return {
-        "id": user.id.__str__(),
-        "login": user.login,
-        "sex": user.sex,
-        "birth_date": user.birth_date,
-    }
+class CustomUserTest(APITestCase):
 
-
-class TestCustomUserViewSet(ViewSetTest):
-
-    list_url = lambda_fixture(lambda: url_for("user-list"))
-    detail_url = lambda_fixture(lambda user: url_for("user-detail", user.pk))
-
-    class TestList(UsesGetMethod, UsesListEndpoint, Returns200):
-        users = lambda_fixture(
-            lambda: [
-                CustomUser.objects.create(**user)
-                for user in [
-                    {"login": "Tes", "sex": "female", "birth_date": "2022-08-01"},
-                    {"login": "Кes", "sex": "female", "birth_date": "2022-08-01"},
-                    {"login": "Аes", "sex": "male", "birth_date": "2022-08-01"},
-                ]
-            ],
-            autouse=True,
+    def setUp(self):
+        self.user1 = CustomUser.objects.create(
+            login="user1", sex="male", birth_date="2022-08-06"
+        )
+        self.user2 = CustomUser.objects.create(
+            login="user2", sex="female", birth_date="2022-08-06"
+        )
+        self.user3 = CustomUser.objects.create(
+            login="user3", sex="male", birth_date="2022-08-06"
         )
 
-        def test_users_list(self, users, json):
-            actual = json
-            expected = [express_key_value(i) for i in users]
-            assert expected == actual
+    def test_users_list(self):
+        """
+        Ensure that getting all users.
+        """
+        # get API response
+        url = reverse("users-list")
+        response = self.client.get(url)
 
-    class TestCreate(
-        UsesPostMethod,
-        UsesListEndpoint,
-        Returns201,
-    ):
-        data = static_fixture(
-            {
-                "login": "Jes",
-                "sex": "female",
-                "birth_date": "2022-08-01",
-            }
-        )
+        # get data from db
+        queryset = CustomUser.objects.all()
+        serializer = CustomUserSerializer(queryset, many=True)
 
-        initial_user_ids = precondition_fixture(
-            lambda: set(CustomUser.objects.values_list("id", flat=True)), async_=False
-        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
 
-        # def test_sets_expected_attrs(self, data, json):
-        #     user = CustomUser.objects.get(pk=json["id"])
-        #
-        #     expected = data
-        #     assert_model_attrs(user, expected)
+    def test_user_retrieve(self):
+        """
+        Ensure that getting user by id.
+        """
+        url = reverse("users-detail", kwargs={'pk': self.user1.pk})
+        response = self.client.get(url)
+
+        user = CustomUser.objects.get(pk=self.user1.pk)
+        serializer = CustomUserSerializer(user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_invalid_user_retrieve(self):
+        """
+        Ensure that no getting invalid user by id.
+        """
+        url = reverse("users-detail", kwargs={'pk': uuid.uuid4()})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_create_user(self):
+        """
+        Ensure that creating user.
+        """
+
+        url = reverse("users-list")
+        data = {
+            "login": "user4",
+            "sex": "female",
+            "birth_date": "2022-08-06"
+        }
+        records_number = CustomUser.objects.count()
+
+        response = self.client.post(url, data=data, format="json")
+        created_user = CustomUser.objects.get(pk=response.data["id"])
+        serializer = CustomUserSerializer(created_user)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(CustomUser.objects.count(), records_number + 1)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_invalid_user_create(self):
+        """
+        Ensure that creating correct user.
+        """
+
+        url = reverse("users-list")
+        invalid_data = {
+            "login": "5userinvalidsolong",
+            "sex": "fXemale",
+            "birth_date": "202208-06"
+        }
+
+        valid_response = {
+            "login": [" Login must starts with a letter", "Ensure this field has no more than 16 characters."],
+            "sex": ["\"fXemale\" is not a valid choice."],
+            "birth_date": ["Date has wrong format. Use one of these formats instead: YYYY-MM-DD."]}
+
+        response = self.client.post(url, data=invalid_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, valid_response)
+
+    def test_partial_update_user(self):
+        """
+        Ensure that user partial updating by id.
+        """
+        url = reverse("users-detail", kwargs={'pk': self.user1.pk})
+        data = {
+            "login": "userUpdated",
+            "sex": "male",
+        }
+
+        response = self.client.patch(url, data=data, format="json")
+        updated_user = CustomUser.objects.get(pk=response.data["id"])
+        serializer = CustomUserSerializer(updated_user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_delete_user(self):
+        """
+        Ensure that user deleting by id.
+        """
+
+        url = reverse("users-detail", kwargs={'pk': self.user1.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_invalid_delete_user(self):
+        """
+        Ensure that user correct deleting by id.
+        """
+
+        url = reverse("users-detail", kwargs={'pk': uuid.uuid4()})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
