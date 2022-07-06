@@ -74,5 +74,27 @@ class CustomUserTest(APITestCase):
         serializer = CustomUserSerializer(created_user)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(CustomUser.objects.count(), records_number+1)
+        self.assertEqual(CustomUser.objects.count(), records_number + 1)
         self.assertEqual(response.data, serializer.data)
+
+    def test_invalid_user_create(self):
+        """
+        Ensure that creating correct user.
+        """
+
+        url = reverse("users-list")
+        invalid_data = {
+            "login": "5userinvalidsolong",
+            "sex": "fXemale",
+            "birth_date": "202208-06"
+        }
+
+        valid_response = {
+            "login": [" Login must starts with a letter", "Ensure this field has no more than 16 characters."],
+            "sex": ["\"fXemale\" is not a valid choice."],
+            "birth_date": ["Date has wrong format. Use one of these formats instead: YYYY-MM-DD."]}
+
+        response = self.client.post(url, data=invalid_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, valid_response)
