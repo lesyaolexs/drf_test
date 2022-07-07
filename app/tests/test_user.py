@@ -4,20 +4,20 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app.models import CustomUser
-from app.serializers import CustomUserSerializer
+from app.models import User
+from app.serializers import UserSerializer
 
 
-class CustomUserTest(APITestCase):
+class UserTest(APITestCase):
 
     def setUp(self):
-        self.user1 = CustomUser.objects.create(
+        self.user1 = User.objects.create(
             login="user1", sex="male", birth_date="2022-08-06"
         )
-        self.user2 = CustomUser.objects.create(
+        self.user2 = User.objects.create(
             login="user2", sex="female", birth_date="2022-08-06"
         )
-        self.user3 = CustomUser.objects.create(
+        self.user3 = User.objects.create(
             login="user3", sex="male", birth_date="2022-08-06"
         )
 
@@ -30,8 +30,8 @@ class CustomUserTest(APITestCase):
         response = self.client.get(url)
 
         # get data from db
-        queryset = CustomUser.objects.all()
-        serializer = CustomUserSerializer(queryset, many=True)
+        queryset = User.objects.all()
+        serializer = UserSerializer(queryset, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
@@ -43,8 +43,8 @@ class CustomUserTest(APITestCase):
         url = reverse("users-detail", kwargs={'pk': self.user1.pk})
         response = self.client.get(url)
 
-        user = CustomUser.objects.get(pk=self.user1.pk)
-        serializer = CustomUserSerializer(user)
+        user = User.objects.get(pk=self.user1.pk)
+        serializer = UserSerializer(user)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
@@ -68,14 +68,14 @@ class CustomUserTest(APITestCase):
             "sex": "female",
             "birth_date": "2022-08-06"
         }
-        records_number = CustomUser.objects.count()
+        records_number = User.objects.count()
 
         response = self.client.post(url, data=data, format="json")
-        created_user = CustomUser.objects.get(pk=response.data["id"])
-        serializer = CustomUserSerializer(created_user)
+        created_user = User.objects.get(pk=response.data["id"])
+        serializer = UserSerializer(created_user)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(CustomUser.objects.count(), records_number + 1)
+        self.assertEqual(User.objects.count(), records_number + 1)
         self.assertEqual(response.data, serializer.data)
 
     def test_invalid_user_create(self):
@@ -111,8 +111,8 @@ class CustomUserTest(APITestCase):
         }
 
         response = self.client.patch(url, data=data, format="json")
-        updated_user = CustomUser.objects.get(pk=response.data["id"])
-        serializer = CustomUserSerializer(updated_user)
+        updated_user = User.objects.get(pk=response.data["id"])
+        serializer = UserSerializer(updated_user)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
