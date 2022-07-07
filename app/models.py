@@ -14,7 +14,20 @@ def validate_login(login: str) -> str:
     return login
 
 
-class CustomUser(models.Model):
+class Group(models.Model):
+    id = models.UUIDField(
+        primary_key=True, auto_created=True, default=uuid.uuid4, editable=False
+    )
+    name = models.CharField(
+        unique=True, max_length=16, validators=[validate_login], null=False
+    )
+    public = models.BooleanField(null=False)
+
+    def __str__(self):
+        return self.id
+
+
+class User(models.Model):
     SEX_CHOICES = (
         (
             "male",
@@ -34,6 +47,7 @@ class CustomUser(models.Model):
     )
     sex = models.CharField(choices=SEX_CHOICES, max_length=6, null=False)
     birth_date = models.DateField()
+    groups = models.ManyToManyField(Group, blank=True, null=True)
 
     def __str__(self) -> str:
         return self.id
