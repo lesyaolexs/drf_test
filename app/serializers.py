@@ -1,9 +1,15 @@
 from rest_framework import serializers
 
-from app.models import CustomUser
+from app.models import Group, User
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
+        model = User
+        fields = ["id", "login", "sex", "birth_date"]
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
         fields = "__all__"
