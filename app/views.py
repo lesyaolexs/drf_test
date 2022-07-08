@@ -1,9 +1,15 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from app.models import Group, User
-from app.serializers import GroupSerializer, UserSerializer
+from app.models import Group, Membership, User
+from app.serializers import (
+    GroupSerializer,
+    MembershipSerializer,
+    MembershipUserSerializer,
+    UserSerializer,
+)
 
 
 class UserViewSet(viewsets.ViewSet):
@@ -14,7 +20,7 @@ class UserViewSet(viewsets.ViewSet):
 
     def list(self, request) -> Response:
         queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
+        serializer = MembershipUserSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None) -> Response:
@@ -46,7 +52,7 @@ class UserViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CustomGroupViewSet(viewsets.ViewSet):
+class GroupViewSet(viewsets.ViewSet):
     """
     A ViewSet for listing, retrieving, creating,
     partial updating, destroying groups and adding/removing users from group.
@@ -84,3 +90,15 @@ class CustomGroupViewSet(viewsets.ViewSet):
         group = get_object_or_404(queryset, pk=pk)
         group.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=["post"], detail=False, url_path="add-users", url_name="add_users")
+    def add_user(self, request):
+        queryset_groups = Group.objects.all()
+        get_object_or_404(queryset_groups, pk=request.data["group_id"])
+        queryset_users = User.objects.all()
+        get_object_or_404(queryset_users, pk=request.data["user_id"])
+
+        add_user_to_group = Membership.objects.create(**request.data)
+
+        response_serializer = MembershipSerializer(add_user_to_group)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)

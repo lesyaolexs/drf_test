@@ -4,8 +4,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app.models import Group
-from app.serializers import GroupSerializer
+from app.models import Group, Membership, User
+from app.serializers import GroupSerializer, MembershipSerializer
 
 
 class GroupTest(APITestCase):
@@ -14,6 +14,7 @@ class GroupTest(APITestCase):
         self.group1 = Group.objects.create(name="group1", public=True)
         self.group2 = Group.objects.create(name="group2", public=False)
         self.group3 = Group.objects.create(name="group3", public=True)
+        self.user = User.objects.create(login="user", sex="male", birth_date="2022-08-08")
 
     def test_groups_list(self):
         """
@@ -125,3 +126,23 @@ class GroupTest(APITestCase):
         url = reverse("groups-detail", kwargs={'pk': uuid.uuid4()})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_add_user(self):
+        """
+        Ensure that user adding to group.
+        """
+
+        url = reverse("groups-list")
+        group_id = Group.objects.get(pk=self.group2.pk)
+        user_id = User.objects.get(pk=self.user.pk)
+        data = {
+                "group_id": group_id,
+                "user_id": user_id
+            }
+
+        records_number = Membership.objects.count()
+
+        response = self.client.post(url, data=data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Membership.objects.count(), records_number + 1)

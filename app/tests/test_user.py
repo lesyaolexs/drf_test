@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from app.models import User
-from app.serializers import UserSerializer
+from app.serializers import MembershipUserSerializer, UserSerializer
 
 
 class UserTest(APITestCase):
@@ -31,7 +31,7 @@ class UserTest(APITestCase):
 
         # get data from db
         queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
+        serializer = MembershipUserSerializer(queryset, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
