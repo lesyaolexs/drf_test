@@ -47,7 +47,17 @@ class User(models.Model):
     )
     sex = models.CharField(choices=SEX_CHOICES, max_length=6, null=False)
     birth_date = models.DateField()
-    groups = models.ManyToManyField(Group, blank=True, null=True)
+    groups = models.ManyToManyField(
+        Group, through="Membership", through_fields=["user", "group"], blank=True
+    )
 
     def __str__(self) -> str:
         return self.id
+
+
+class Membership(models.Model):
+    id = models.UUIDField(
+        primary_key=True, auto_created=True, default=uuid.uuid4, editable=False
+    )
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False)
+    group = models.ForeignKey(Group, on_delete=models.DO_NOTHING, null=False)
