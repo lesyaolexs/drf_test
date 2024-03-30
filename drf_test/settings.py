@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "app.apps.AppConfig",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
@@ -127,6 +128,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.OpenAPIRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -141,4 +144,27 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.TemplateHTMLRenderer",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "app.authentication.BearerAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.AutoSchema",
 }
+
+# Static token for Bearer Authentication
+AUTH_STATIC_TOKEN = os.environ["AUTH_STATIC_TOKEN"]
+
+RABBITMQ = {
+    "PROTOCOL": "amqp",  # in prod change with "amqps"
+    "HOST": os.environ["RABBITMQ_HOST"],
+    "PORT": os.environ["RABBITMQ_PORT"],
+    "USER": os.environ["RABBITMQ_USER"],
+    "PASSWORD": os.environ["RABBITMQ_PASSWORD"],
+}
+
+CELERY_BROKER_URL = (
+    f"{RABBITMQ['PROTOCOL']}://{RABBITMQ['USER']}:"
+    f"{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}"
+)

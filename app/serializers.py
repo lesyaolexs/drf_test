@@ -1,12 +1,6 @@
 from rest_framework import serializers
 
-from app.models import Group, Membership, User
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "login", "sex", "birth_date"]
+from app.models import Group, User
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -15,7 +9,7 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class MembershipUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="id", required=False
     )
@@ -25,7 +19,6 @@ class MembershipUserSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class MembershipSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Membership
-        fields = ["group_id", "user_id"]
+class MembershipSerializer(serializers.Serializer):
+    group_id = serializers.UUIDField()
+    user_id = serializers.UUIDField()

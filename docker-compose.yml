@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    user: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  web:
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      - ./:/drf_test
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - celery-worker
+  celery-worker:
+    build:
+      context: .
+    command:  bash -c "celery -A drf_test worker -l info"
+    volumes:
+      - .:/drf_test
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    container_name: "rabbitmq"
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+volumes:
+  postgres_data:

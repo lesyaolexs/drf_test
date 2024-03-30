@@ -15,5 +15,10 @@ Including another URLconf
 """
 
 from django.urls import include, path
+from rest_framework.documentation import include_docs_urls
+from rest_framework.permissions import AllowAny
 
-urlpatterns = [path("app/", include("app.urls"))]
+urlpatterns = [
+    path("app/", include("app.urls")),
+    path("docs/", include_docs_urls(title="drf_test", permission_classes=[AllowAny])),
+]

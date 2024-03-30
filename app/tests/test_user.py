@@ -1,16 +1,23 @@
 import uuid
 
+from django.contrib.auth.models import User as AuthUser
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIClient, APITestCase
 
 from app.models import User
-from app.serializers import MembershipUserSerializer, UserSerializer
+from app.serializers import UserSerializer
 
 
 class UserTest(APITestCase):
 
     def setUp(self):
+        AuthUser.objects.create_user(
+            username='auth_user', email='authuser@mail.com', password='top_secret')
+        self.auth_user = AuthUser.objects.first()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.auth_user)
+
         self.user1 = User.objects.create(
             login="user1", sex="male", birth_date="2022-08-06"
         )
@@ -31,10 +38,10 @@ class UserTest(APITestCase):
 
         # get data from db
         queryset = User.objects.all()
-        serializer = MembershipUserSerializer(queryset, many=True)
+        serializer = UserSerializer(queryset, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data["results"], serializer.data)
 
     def test_user_retrieve(self):
         """
@@ -85,13 +92,14 @@ class UserTest(APITestCase):
 
         url = reverse("users-list")
         invalid_data = {
-            "login": "5userinvalidsolong",
+            "login": "5userinvali$$%dsolong",
             "sex": "fXemale",
             "birth_date": "202208-06"
         }
 
         valid_response = {
-            "login": [" Login must starts with a letter", "Ensure this field has no more than 16 characters."],
+            "login": ["Login should start with a letter and be alphanumeric",
+                      "Ensure this field has no more than 16 characters."],
             "sex": ["\"fXemale\" is not a valid choice."],
             "birth_date": ["Date has wrong format. Use one of these formats instead: YYYY-MM-DD."]}
 

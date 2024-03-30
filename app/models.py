@@ -6,11 +6,11 @@ from django.db import models
 
 def validate_login(login: str) -> str:
     """
-    Check that the login starts with a letter
+    Check that the login starts with a letter and is alphanumeric
     :return:
     """
-    if not login or not login[0].isalpha():
-        raise ValidationError(" Login must starts with a letter")
+    if not login or not login.isalnum() or not login[0].isalpha():
+        raise ValidationError("Login should start with a letter and be alphanumeric")
     return login
 
 
@@ -22,6 +22,9 @@ class Group(models.Model):
         unique=True, max_length=16, validators=[validate_login], null=False
     )
     public = models.BooleanField(null=False)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.id
@@ -47,17 +50,10 @@ class User(models.Model):
     )
     sex = models.CharField(choices=SEX_CHOICES, max_length=6, null=False)
     birth_date = models.DateField()
-    groups = models.ManyToManyField(
-        Group, through="Membership", through_fields=["user", "group"], blank=True
-    )
+    groups = models.ManyToManyField(Group)
+
+    class Meta:
+        ordering = ["login"]
 
     def __str__(self) -> str:
         return self.id
-
-
-class Membership(models.Model):
-    id = models.UUIDField(
-        primary_key=True, auto_created=True, default=uuid.uuid4, editable=False
-    )
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False)
-    group = models.ForeignKey(Group, on_delete=models.DO_NOTHING, null=False)

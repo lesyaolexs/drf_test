@@ -1,16 +1,23 @@
 import uuid
 
+from django.contrib.auth.models import User as AuthUser
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIClient, APITestCase
 
-from app.models import Group, Membership, User
-from app.serializers import GroupSerializer, MembershipSerializer
+from app.models import Group, User
+from app.serializers import GroupSerializer
 
 
 class GroupTest(APITestCase):
 
     def setUp(self):
+        AuthUser.objects.create_user(
+            username='auth_user', email='authuser@mail.com', password='top_secret')
+        self.auth_user = AuthUser.objects.first()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.auth_user)
+
         self.group1 = Group.objects.create(name="group1", public=True)
         self.group2 = Group.objects.create(name="group2", public=False)
         self.group3 = Group.objects.create(name="group3", public=True)
@@ -29,7 +36,7 @@ class GroupTest(APITestCase):
         serializer = GroupSerializer(queryset, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.data["results"], serializer.data)
 
     def test_group_retrieve(self):
         """
@@ -85,7 +92,7 @@ class GroupTest(APITestCase):
 
         valid_response = {
             "name": [
-                " Login must starts with a letter",
+                "Login should start with a letter and be alphanumeric",
                 "Ensure this field has no more than 16 characters."],
             "public": ["Must be a valid boolean."]
         }
@@ -132,17 +139,29 @@ class GroupTest(APITestCase):
         Ensure that user adding to group.
         """
 
-        url = reverse("groups-list")
-        group_id = Group.objects.get(pk=self.group2.pk)
-        user_id = User.objects.get(pk=self.user.pk)
+        url = reverse("groups-add_users")
+        group_id = self.group3.pk.__str__()
+        user_id = self.user.pk.__str__()
         data = {
-                "group_id": group_id,
-                "user_id": user_id
-            }
+            "group_id": group_id,
+            "user_id": user_id
+        }
 
-        records_number = Membership.objects.count()
+        records_number = User.groups.through.objects.count()
 
         response = self.client.post(url, data=data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Membership.objects.count(), records_number + 1)
+        self.assertEqual(User.groups.through.objects.count(), records_number + 1)
+
+    def test_delete_user(self):
+        """
+        Ensure that user deleting from group.
+        """
+        url = reverse("groups-delete_users", kwargs={'pk': self.group2.pk})
+        user_id = self.user.pk
+        data = {
+            "user_id": user_id
+        }
+        response = self.client.delete(url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
